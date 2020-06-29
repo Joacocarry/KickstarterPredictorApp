@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">KickstarterPredictor</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="txtFragment1">Fragment 1</string>
+    <string name="txtFragment2">Fragment 2</string>
+    <string name="buttonConfirm">CONFIRM</string>
+</resources>
