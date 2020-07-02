@@ -1,0 +1,17 @@
+{
+  "Publishing": 0,
+  "Film & Video": 1,
+  "Music": 2,
+  "Food": 3,
+  "Design": 4,
+  "Crafts": 5,
+  "Games": 6,
+  "Comics": 7,
+  "Fashion": 8,
+  "Theater": 9,
+  "Art": 10,
+  "Photography": 11,
+  "Technology": 12,
+  "Dance": 13,
+  "Journalism": 14
+}

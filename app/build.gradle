@@ -11,6 +11,9 @@ android {
     aaptOptions {
         noCompress "tflite"
     }
+    buildFeatures {
+        viewBinding true
+    }
 
     defaultConfig {
         applicationId "com.candy.kickstarterpredictor"
