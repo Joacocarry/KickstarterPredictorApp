@@ -78,14 +78,15 @@ class Fragment1 : Fragment() {
                     "Cat is $categorySelected. Currency is $currencySelected Type is $typeSelected Country is $countrySelected Time is $deltaTime and goal is $goalSelected"
                 )
 
-                val inputDataBuffer: ByteBuffer = ByteBuffer.allocateDirect(20).order(ByteOrder.nativeOrder())
+                val inputDataBuffer: ByteBuffer = ByteBuffer.allocateDirect(24).order(ByteOrder.nativeOrder())
                 try {
                     inputDataBuffer
-                        .putFloat(0, typeSelected)
-                        .putFloat(4, categorySelected)
+                        .putFloat(0, categorySelected)
+                        .putFloat(4, typeSelected)
                         .putFloat(8, currencySelected)
-                        .putFloat(11, goalSelected)
+                        .putFloat(12, goalSelected)
                         .putFloat(16, deltaTime)
+
                     interpreter.run(inputDataBuffer, res)
                     Log.d(TAG, "${res[0][0]}")
                     binding.resultTextView.text = "${res[0][0] * 100} %"
@@ -127,7 +128,8 @@ class Fragment1 : Fragment() {
                     }
                 } else {
                     Log.w(TAG, "Failure")
-                    Snackbar.make(v, "No pudimos inicializar el modelo, intentá en un rato", Snackbar.LENGTH_SHORT).show()
+                    Snackbar.make(v, "No pudimos inicializar el modelo, intentá en un rato", Snackbar.LENGTH_LONG).show()
+
                 }
             }
 
