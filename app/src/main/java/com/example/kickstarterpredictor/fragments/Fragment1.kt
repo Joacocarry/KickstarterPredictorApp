@@ -36,20 +36,6 @@ class Fragment1 : Fragment() {
         v = binding.root
         return v
     }
-    private fun featureListGenerator(id: Int): ArrayList<SpinnerItem> {
-        val featureString = resources.openRawResource(id).bufferedReader().use{
-            it.readText()
-        }
-        val featureJSON = JSONObject(featureString)
-        val featureKeys = featureJSON.keys()
-        val featureList : ArrayList<SpinnerItem> = ArrayList()
-        featureKeys.forEach { it
-            val newItem = SpinnerItem(featureJSON.get(it) as Int, it)
-            featureList.add(newItem)
-        }
-        return featureList
-    }
-
 
     override fun onStart() {
         super.onStart()
@@ -69,11 +55,11 @@ class Fragment1 : Fragment() {
         binding.typeSpinner.adapter = typeAdapter
         binding.countrySpinner.adapter = countryAdapter
 
-        val remoteModel = FirebaseCustomRemoteModel.Builder("kickpred").build()
         var x: FloatArray = FloatArray(1)
         var res = arrayOf(x)
 
         binding.buttonConfirm.isEnabled = false
+
         binding.buttonConfirm.setOnClickListener{
             //Hardcoded values are drawn from dataset evaluation...
             val mCategory = binding.categorySpinner.selectedItem as SpinnerItem
@@ -92,23 +78,19 @@ class Fragment1 : Fragment() {
                     "Cat is $categorySelected. Currency is $currencySelected Type is $typeSelected Country is $countrySelected Time is $deltaTime and goal is $goalSelected"
                 )
 
-                val inputDataBuffer: ByteBuffer =
-                    ByteBuffer.allocateDirect(20).order(ByteOrder.nativeOrder())
+                val inputDataBuffer: ByteBuffer = ByteBuffer.allocateDirect(20).order(ByteOrder.nativeOrder())
                 try {
                     inputDataBuffer
                         .putFloat(0, typeSelected)
-                        .putFloat(1, categorySelected)
-                        .putFloat(2, currencySelected)
-                        .putFloat(3, goalSelected)
-                        .putFloat(4, deltaTime)
+                        .putFloat(4, categorySelected)
+                        .putFloat(8, currencySelected)
+                        .putFloat(11, goalSelected)
+                        .putFloat(16, deltaTime)
                     interpreter.run(inputDataBuffer, res)
                     Log.d(TAG, "${res[0][0]}")
                     binding.resultTextView.text = "${res[0][0] * 100} %"
-
-
-
                 } catch (exc: Exception) {
-                    Log.d(TAG, "was ${exc.toString()}")
+                    Log.w(TAG, "was $exc")
                 }
             }
             else{
@@ -116,11 +98,11 @@ class Fragment1 : Fragment() {
             }
         }
 
+        val remoteModel = FirebaseCustomRemoteModel.Builder("kickpred").build()
         FirebaseModelManager.getInstance().getLatestModelFile(remoteModel)
             .addOnCompleteListener { task ->
                 val modelFile = task.result
                 if (modelFile != null) {
-
                     Log.d(TAG, "downloaded")
                     interpreter = Interpreter(modelFile)
                     val mByteBuffer = ByteBuffer.allocateDirect(20).order(ByteOrder.nativeOrder())
@@ -148,7 +130,6 @@ class Fragment1 : Fragment() {
                     Snackbar.make(v, "No pudimos inicializar el modelo, intentá en un rato", Snackbar.LENGTH_SHORT).show()
                 }
             }
-
 
         /*
             val remoteModel = FirebaseCustomRemoteModel.Builder("kickpred").build()
@@ -200,6 +181,20 @@ class Fragment1 : Fragment() {
 
             }
         */
+    }
+
+    private fun featureListGenerator(id: Int): ArrayList<SpinnerItem> {
+        val featureString = resources.openRawResource(id).bufferedReader().use{
+            it.readText()
+        }
+        val featureJSON = JSONObject(featureString)
+        val featureKeys = featureJSON.keys()
+        val featureList : ArrayList<SpinnerItem> = ArrayList()
+        featureKeys.forEach { it
+            val newItem = SpinnerItem(featureJSON.get(it) as Int, it)
+            featureList.add(newItem)
+        }
+        return featureList
     }
 
     public fun standardScaling(value : Float, std: Float, mean: Float): Float {
