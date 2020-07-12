@@ -14,11 +14,9 @@ import com.example.kickstarterpredictor.classes.SpinnerItem
 import com.example.kickstarterpredictor.databinding.Fragment1Binding
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.ml.common.modeldownload.FirebaseModelManager
-import com.google.firebase.ml.custom.FirebaseCustomLocalModel
 import com.google.firebase.ml.custom.FirebaseCustomRemoteModel
 import org.json.JSONObject
 import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.TensorFlowLite
 import java.io.FileInputStream
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -91,14 +89,15 @@ class Fragment1 : Fragment() {
                     "Cat is $categorySelected. Currency is $currencySelected Type is $typeSelected Country is $countrySelected Time is $deltaTime and goal is $goalSelected"
                 )
 
-                val inputDataBuffer: ByteBuffer = ByteBuffer.allocateDirect(20).order(ByteOrder.nativeOrder())
+                val inputDataBuffer: ByteBuffer = ByteBuffer.allocateDirect(24).order(ByteOrder.nativeOrder())
                 try {
                     inputDataBuffer
                         .putFloat(0, categorySelected)
                         .putFloat(4, typeSelected)
                         .putFloat(8, currencySelected)
-                        .putFloat(12, goalSelected)
-                        .putFloat(16, deltaTime)
+                        .putFloat(12, countrySelected)
+                        .putFloat(16, goalSelected)
+                        .putFloat(20, deltaTime)
 
                     interpreter.run(inputDataBuffer, res)
                     Log.d(TAG, "${res[0][0]}")
@@ -124,7 +123,7 @@ class Fragment1 : Fragment() {
                     testModel(res)
                 } else {
                     Log.w(TAG, "Failure")
-                    Snackbar.make(v, "No pudimos inicializar el modelo, intentá en un rato", Snackbar.LENGTH_LONG).show()
+                    Snackbar.make(v, "Estás operando online", Snackbar.LENGTH_LONG).show()
                     binding.buttonConfirm.isEnabled = true
                     interpreter = Interpreter(loadModelFile(this.requireActivity()))
                     testModel(res)
@@ -133,7 +132,7 @@ class Fragment1 : Fragment() {
     }
 
     private fun testModel(res: Array<FloatArray>) {
-        val mByteBuffer = ByteBuffer.allocateDirect(20).order(ByteOrder.nativeOrder())
+        val mByteBuffer = ByteBuffer.allocateDirect(24).order(ByteOrder.nativeOrder())
         try {
             mByteBuffer
                 .putFloat(0, 1f)
@@ -141,6 +140,7 @@ class Fragment1 : Fragment() {
                 .putFloat(2, 3f)
                 .putFloat(3, 4f)
                 .putFloat(4, 5f)
+                .putFloat(5, 6f)
                 .putFloat(5, 6f)
 
         } catch (exc: Exception) {
