@@ -1,5 +1,6 @@
 package com.example.kickstarterpredictor.fragments
 
+import android.app.Activity
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -13,11 +14,18 @@ import com.example.kickstarterpredictor.classes.SpinnerItem
 import com.example.kickstarterpredictor.databinding.Fragment1Binding
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.ml.common.modeldownload.FirebaseModelManager
+import com.google.firebase.ml.custom.FirebaseCustomLocalModel
 import com.google.firebase.ml.custom.FirebaseCustomRemoteModel
 import org.json.JSONObject
 import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.TensorFlowLite
+import java.io.FileInputStream
+import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.MappedByteBuffer
+import java.nio.channels.FileChannel
+
 
 class Fragment1 : Fragment() {
     private var _binding: Fragment1Binding ? = null
@@ -35,6 +43,11 @@ class Fragment1 : Fragment() {
         _binding = Fragment1Binding.inflate(inflater, container, false)
         v = binding.root
         return v
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        _binding = null
     }
 
     override fun onStart() {
@@ -78,7 +91,7 @@ class Fragment1 : Fragment() {
                     "Cat is $categorySelected. Currency is $currencySelected Type is $typeSelected Country is $countrySelected Time is $deltaTime and goal is $goalSelected"
                 )
 
-                val inputDataBuffer: ByteBuffer = ByteBuffer.allocateDirect(24).order(ByteOrder.nativeOrder())
+                val inputDataBuffer: ByteBuffer = ByteBuffer.allocateDirect(20).order(ByteOrder.nativeOrder())
                 try {
                     inputDataBuffer
                         .putFloat(0, categorySelected)
@@ -99,90 +112,47 @@ class Fragment1 : Fragment() {
             }
         }
 
-        val remoteModel = FirebaseCustomRemoteModel.Builder("kickpred").build()
+
+        val remoteModel = FirebaseCustomRemoteModel.Builder("nonflat")
+            .build()
         FirebaseModelManager.getInstance().getLatestModelFile(remoteModel)
             .addOnCompleteListener { task ->
                 val modelFile = task.result
                 if (modelFile != null) {
                     Log.d(TAG, "downloaded")
                     interpreter = Interpreter(modelFile)
-                    val mByteBuffer = ByteBuffer.allocateDirect(20).order(ByteOrder.nativeOrder())
-                    try {
-                        mByteBuffer
-                            .putFloat(0, 1f)
-                            .putFloat(1, 2f)
-                            .putFloat(2, 3f)
-                            .putFloat(3, 4f)
-                            .putFloat(4, 5f)
-                            .putFloat(5, 6f)
-
-                    } catch (exc: Exception) {
-                        Log.d(TAG, "was ${exc.toString()}")
-                    }
-                    try {
-                        interpreter.run(mByteBuffer, res)
-                        Log.d(TAG, "${res[0][0]}")
-                        binding.buttonConfirm.isEnabled=true
-                    } catch (e: java.lang.Exception) {
-                        Log.d(TAG, "saw $e")
-                    }
+                    testModel(res)
                 } else {
                     Log.w(TAG, "Failure")
                     Snackbar.make(v, "No pudimos inicializar el modelo, intentá en un rato", Snackbar.LENGTH_LONG).show()
-
+                    binding.buttonConfirm.isEnabled = true
+                    interpreter = Interpreter(loadModelFile(this.requireActivity()))
+                    testModel(res)
                 }
             }
+    }
 
-        /*
-            val remoteModel = FirebaseCustomRemoteModel.Builder("kickpred").build()
-            val conditions = FirebaseModelDownloadConditions.Builder()
-                .requireWifi()
-                .build()
-            FirebaseModelManager.getInstance().download(remoteModel, conditions)
-                .addOnCompleteListener {task->
-                    Log.d(TAG, "${remoteModel}")
-                    // Download complete. Depending on your app, you could enable the ML
-                    // feature, or switch from the local model to the remote model, etc.
-                    if(task.isSuccessful){
-                        val options = FirebaseModelInterpreterOptions.Builder(remoteModel).build()
-                        val interpreter = FirebaseModelInterpreter.getInstance(options)
-                        Log.d(TAG, "Model with $remoteModel")
-                        val ioOptions = FirebaseModelInputOutputOptions.Builder()
-                            .setInputFormat(0, FirebaseModelDataType.FLOAT32, intArrayOf(1,5))
-                            .setOutputFormat(0, FirebaseModelDataType.FLOAT32, intArrayOf(1))
-                            .build()
-                        val mByteBuffer = ByteBuffer.allocateDirect(12).order(ByteOrder.nativeOrder())
-                        try {
-                            mByteBuffer
-                                .putFloat(0, 1f)
-                                .putFloat(1, 2f)
-                                .putFloat(2, 3f)
-                                .putFloat(3, 4f)
-                                .putFloat(4, 5f)
-                        } catch (exc: BufferOverflowException) {
-                            Log.w(TAG, exc)
-                        }
-                        val inputs = FirebaseModelInputs.Builder()
-                            .add(mByteBuffer)
-                            .build()
+    private fun testModel(res: Array<FloatArray>) {
+        val mByteBuffer = ByteBuffer.allocateDirect(20).order(ByteOrder.nativeOrder())
+        try {
+            mByteBuffer
+                .putFloat(0, 1f)
+                .putFloat(1, 2f)
+                .putFloat(2, 3f)
+                .putFloat(3, 4f)
+                .putFloat(4, 5f)
+                .putFloat(5, 6f)
 
-                        interpreter!!.run(inputs, ioOptions)
-                            .addOnSuccessListener {res->
-                                Log.d(TAG, "$res")
-                            }
-                            .addOnFailureListener{
-                                Log.w(TAG, it)
-                            }
-
-                    }
-                    else{
-                        Log.w(TAG,"Failure")
-                    }
-                    }
-            btnConfirm.setOnClickListener {
-
-            }
-        */
+        } catch (exc: Exception) {
+            Log.d(TAG, "was ${exc.toString()}")
+        }
+        try {
+            interpreter.run(mByteBuffer, res)
+            Log.d(TAG, "${res[0][0]}")
+            binding.buttonConfirm.isEnabled = true
+        } catch (e: java.lang.Exception) {
+            Log.d(TAG, "saw $e")
+        }
     }
 
     private fun featureListGenerator(id: Int): ArrayList<SpinnerItem> {
@@ -203,4 +173,18 @@ class Fragment1 : Fragment() {
         return (value - mean) / std
     }
 
+    fun getModel(){
+
+    }
+
+    /** Memory-map the model file in Assets.  */
+    @Throws(IOException::class)
+    private fun loadModelFile(activity: Activity): MappedByteBuffer {
+        val fileDescriptor = activity.assets.openFd("model.tflite")
+        val inputStream = FileInputStream(fileDescriptor.fileDescriptor)
+        val fileChannel: FileChannel = inputStream.channel
+        val startOffset = fileDescriptor.startOffset
+        val declaredLength = fileDescriptor.declaredLength
+        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
+    }
 }
